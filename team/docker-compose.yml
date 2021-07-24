@@ -1,0 +1,47 @@
+version: "3"
+
+networks:
+  fmgs:
+    driver: bridge
+
+services:
+  db:
+    image: mysql:8.0.26
+    container_name: db
+    restart: always
+    volumes:
+#      - ./conf/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:rw
+      - ./data/mysql:/var/lib/mysql/:rw
+      - ./sm.sql:/tmp/sm.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      TZ: Asia/Hong_Kong
+    ports:
+      - "3306:3306"
+    networks:
+      - fmgs
+  app:
+    build: service
+    container_name: app
+    restart: always
+    ports:
+      - 8081:8081
+    networks:
+      - fmgs
+    depends_on:
+      - db
+    links:
+      - "db:sm"
+  web:
+    image: nginx:1.20.1
+    container_name: web
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./web/html:/usr/share/nginx/html
+      - ./web/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - fmgs
